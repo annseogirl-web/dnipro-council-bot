@@ -44,7 +44,7 @@ DOC_TYPE_CODE = os.environ.get("DOC_TYPE_CODE", "0")
 TELEGRAM_TOKEN = os.environ.get(
     "TELEGRAM_BOT_TOKEN", "8562718356:AAFCqZv9o3A8p_QlCRTrQiPZ1Bo3WQRPN9U"
 )
-TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID", "ВСТАВТЕ_СЮДИ_CHAT_ID")
+TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID", "@dnipro_proekty")
 
 HEADERS = {
     "User-Agent": (
