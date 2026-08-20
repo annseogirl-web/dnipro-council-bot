@@ -30,17 +30,9 @@ SEARCH_URL = "https://dniprorada.gov.ua/uk/Widgets/GetCouncilProjectDocuments"
 PAGE_URL = "https://dniprorada.gov.ua/uk/page/poshuk-proektiv-dokumentiv-dniprovskoi-miskoi-radi"
 STATE_FILE = os.environ.get("STATE_FILE", "seen_projects.json")
 
-# Скільки днів "назад" від сьогодні захоплювати кожного разу.
-# Це буфер на випадок, якщо сайт публікує проєкт із запізненням
-# або запуск бота якийсь час не відбувався.
 LOOKBACK_DAYS = int(os.environ.get("LOOKBACK_DAYS", "4"))
-
-# 0 = всі види проєктів; 2 = виконком; 3 = міськрада; 4 = розпорядження голови
 DOC_TYPE_CODE = os.environ.get("DOC_TYPE_CODE", "0")
 
-# Токен і chat_id можна або задати тут напряму (простіше), або передати
-# через змінні середовища TELEGRAM_BOT_TOKEN / TELEGRAM_CHAT_ID (безпечніше,
-# якщо репозиторій публічний) — значення з env мають пріоритет.
 TELEGRAM_TOKEN = os.environ.get(
     "TELEGRAM_BOT_TOKEN", "8562718356:AAFCqZv9o3A8p_QlCRTrQiPZ1Bo3WQRPN9U"
 )
@@ -58,14 +50,38 @@ HEADERS = {
     "Accept": "text/html, */*; q=0.01",
 }
 
+_session = requests.Session()
+_session_primed = False
+
+
+def _prime_session() -> None:
+    """Спочатку заходимо на саму сторінку пошуку, як це робить браузер,
+    щоб отримати cookies/сесію — деякі держсайти відхиляють POST-запити
+    без цього навіть із правильним тілом запиту."""
+    global _session_primed
+    if _session_primed:
+        return
+    resp = _session.get(
+        PAGE_URL,
+        headers={
+            "User-Agent": HEADERS["User-Agent"],
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+            "Accept-Language": "uk-UA,uk;q=0.9,en-US;q=0.8,en;q=0.7",
+        },
+        timeout=30,
+    )
+    resp.raise_for_status()
+    _session_primed = True
+
 
 def fetch_html(date_range: str) -> str:
+    _prime_session()
     data = {
         "DateRange": date_range,
         "DocHeader": "",
         "DocTypeCode": DOC_TYPE_CODE,
     }
-    resp = requests.post(SEARCH_URL, headers=HEADERS, data=data, timeout=30)
+    resp = _session.post(SEARCH_URL, headers=HEADERS, data=data, timeout=30)
     resp.raise_for_status()
     return resp.text
 
